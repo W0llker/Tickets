@@ -4,6 +4,8 @@ import com.app.entity.Ticket;
 import com.app.repository.TicketRepository;
 import com.app.utils.TimeUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.*;
 
@@ -26,16 +28,16 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public Double differenceAvgAndMedian() {
+    public BigDecimal differenceAvgAndMedian() {
         List<Ticket> tickets = repository.getTickets();
         tickets.sort(Comparator.comparingInt(a -> a.getPrice().intValue()));
-        double median = getMedian(tickets);
+        BigDecimal median = getMedian(tickets);
         List<Double> doubles = tickets.stream().map(ticket -> ticket.getPrice().doubleValue()).toList();
         OptionalDouble average = doubles.stream().mapToDouble(value -> value).average();
         if (average.isEmpty()) {
             throw new RuntimeException("Среднее значение = null");
         }
-        return average.getAsDouble() - median;
+        return BigDecimal.valueOf(average.getAsDouble()).subtract(median).setScale(2, RoundingMode.DOWN);
     }
 
     private Map<String, Duration> timeCheck(Map<String, Duration> hashMap, Duration flightDuration, Ticket ticket) {
@@ -50,13 +52,13 @@ public class TicketServiceImpl implements TicketService {
         return hashMap;
     }
 
-    private double getMedian(List<Ticket> tickets) {
+    private BigDecimal getMedian(List<Ticket> tickets) {
         int length = tickets.size();
         if (length % 2 == 0) {
             double intermediateResult = tickets.get(length / 2 - 1).getPrice().doubleValue() + tickets.get((length / 2)).getPrice().doubleValue();
-            return intermediateResult / 2;
+            return BigDecimal.valueOf(intermediateResult / 2);
         } else {
-            return tickets.get((length / 2)).getPrice().doubleValue();
+            return BigDecimal.valueOf(tickets.get((length / 2)).getPrice().doubleValue());
         }
     }
 }
